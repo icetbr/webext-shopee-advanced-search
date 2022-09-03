@@ -1,0 +1,8 @@
+{
+    "namespace": "https://github.com/icetbr/userscripts",
+    "icon": "https://www.google.com/s2/favicons?sz=64&domain=shopee.com.br",
+    "include": "https://shopee.*/*",
+    "license": "MIT",
+    "updateURL": "https://openuserjs.org/meta/icetbr/Shopee_Advanced_Search.meta.js",
+    "downloadURL": "https://openuserjs.org/src/scripts/icetbr/Shopee_Advanced_Search.user.js"
+}
