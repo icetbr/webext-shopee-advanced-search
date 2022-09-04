@@ -1,5 +1,5 @@
-// CONTRIBUTOR NOTE: imports available on giget /dev dependencies from the dist/content.js file
-import { $, $$, el, toBase64, toSearcheable, isBrazil } from '@icetbr/utils/web';
+// CONTRIBUTOR NOTE: imports available at github:icetbr/utils
+import { $, $$, el, toBase64, toSearchable, isBrazil } from '@icetbr/utils/web';
 import { split } from '@icetbr/utils/misc';
 
 const filterIconSvg = `
@@ -13,15 +13,15 @@ const filterIconSvg = `
 
 const filter = ($searchedWordsInput, $excludedWordsInput) => () => {
     const $products = Array.from($$('.shopee-search-item-result__item'));
-    const searchedWords = split(toSearcheable($searchedWordsInput.value));
-    const excludedWords = split(toSearcheable($excludedWordsInput.value));
+    const searchedWords = split(toSearchable($searchedWordsInput.value));
+    const excludedWords = split(toSearchable($excludedWordsInput.value));
 
-    const lacksAllSearchedWords = element => !searchedWords.every(w => element.dataset.searcheableText.includes(w));
-    const hasAnyExcludedWords = element => excludedWords.some(w => element.dataset.searcheableText.includes(w));
+    const lacksAllSearchedWords = element => !searchedWords.every(w => element.dataset.searchableText.includes(w));
+    const hasAnyExcludedWords = element => excludedWords.some(w => element.dataset.searchableText.includes(w));
 
-    // const withSearcheableText = el => (el.dataset.searcheableText = toSearcheable(el.querySelector('.Cve6sh')?.textContent ?? ''), el);
-    const withSearcheableText = el => {
-        el.dataset.searcheableText = toSearcheable(el.querySelector('.Cve6sh')?.textContent ?? '');
+    // const withSearchableText = el => (el.dataset.searchableText = toSearchable(el.querySelector('.Cve6sh')?.textContent ?? ''), el);
+    const withSearchableText = el => {
+        el.dataset.searchableText = toSearchable(el.querySelector('.Cve6sh')?.textContent ?? '');
         return el;
     }
 
@@ -36,8 +36,8 @@ const filter = ($searchedWordsInput, $excludedWordsInput) => () => {
     };
 
     const $loadedProducts = $products
-        .map(withSearcheableText)
-        .filter(p => p.dataset.searcheableText);
+        .map(withSearchableText)
+        .filter(p => p.dataset.searchableText);
 
     const hiddenCount = $loadedProducts.reduce(toggleHidden, 0);
 

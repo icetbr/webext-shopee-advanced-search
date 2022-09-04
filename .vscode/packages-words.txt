@@ -1,0 +1,13 @@
+icetbr
+utils
+rollup
+plugin-node-resolve
+chrome-webstore-upload-cli
+cspell
+eslint
+eslint-config-airbnb-base
+eslint-plugin-import
+rollup
+rollup-plugin-cleanup
+rollup-plugin-userscript-metablock
+web-ext
