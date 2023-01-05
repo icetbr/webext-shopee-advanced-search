@@ -1,5 +1,5 @@
 # Shopee Advanced Search
-Filter search results containing ALL specified words, supporting word exclusion.
+Filter search results containing ALL specified words, supporting word exclusion and minimum sold.
 
 ![After](media/after.png)
 
