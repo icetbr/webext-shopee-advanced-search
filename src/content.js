@@ -13,87 +13,93 @@ const filterIconSvg = `
         </g>
     </svg>`;
 
-    const filter = ($searchedWordsInput, $excludedWordsInput, $minimumSoldInput) => () => {
-        const $products = $$('.shopee-search-item-result__item');
-        const searchedWords = split(toSearchable($searchedWordsInput.value));
-        const excludedWords = split(toSearchable($excludedWordsInput.value));
-        const minimumSold = parseInt($minimumSoldInput.value);
+const isThousands = string => ['k', 'mil'].some(s => string?.includes(s));
 
-        const lacksAllSearchedWords = element => !searchedWords.every(w => element.dataset.searchableText.includes(w));
-        const hasAnyExcludedWords = element => excludedWords.some(w => element.dataset.searchableText.includes(w));
-        const hasSoldLessThan = element => element.dataset.soldCount < minimumSold;
+const parseNumber = string => {
+    const number = parseFloat(string?.replace(',', '.').match(/[\d\.]+/g));
+    return isThousands(string) ? number * 1000 : number;
+}
 
-        const withSearchableText = el => {
-            el.dataset.searchableText = toSearchable($('.Cve6sh', el)?.textContent ?? '');
-            return el;
-        };
+const filter = ($searchedWordsInput, $excludedWordsInput, $minimumSoldInput) => () => {
+    const $products = $$('.shopee-search-item-result__item');
+    const searchedWords = split(toSearchable($searchedWordsInput.value));
+    const excludedWords = split(toSearchable($excludedWordsInput.value));
+    const minimumSold = parseNumber($minimumSoldInput.value);
 
-        const withSoldCount = el => {
-            const soldCountText = $('.r6HknA.uEPGHT', el)?.textContent;
-            el.dataset.soldCount = soldCountText?.includes('mil') ? 1000 : parseInt(soldCountText);
-            return el;
-        };
+    const lacksAllSearchedWords = element => !searchedWords.every(w => element.dataset.searchableText.includes(w));
+    const hasAnyExcludedWords = element => excludedWords.some(w => element.dataset.searchableText.includes(w));
+    const hasSoldLessThan = element => element.dataset.soldCount < minimumSold;
 
-        const toggleHidden = (counts, el) => {
-            if (lacksAllSearchedWords(el) || hasAnyExcludedWords(el)) {
-                el.style.display = 'none';
-                counts[0]++;
-            } else if (!isNaN(minimumSold) && hasSoldLessThan(el)){
-                el.style.display = 'none';
-                counts[1]++;
-            } else {
-                el.style.display = 'block';
-            }
-            return counts;
-        };
+    const withSearchableText = el => {
+        el.dataset.searchableText = toSearchable($('.Cve6sh', el)?.textContent ?? '');
+        return el;
+    };
 
-        let $loadedProducts = $products
-            .map(withSearchableText)
-            .filter(p => p.dataset.searchableText);
-        if (!isNaN(minimumSold)) {
-            $loadedProducts.map(withSoldCount);
+    const withSoldCount = el => {
+        el.dataset.soldCount = parseNumber($('.r6HknA.uEPGHT', el)?.textContent);
+        return el;
+    };
+
+    const toggleHidden = (counts, el) => {
+        if (lacksAllSearchedWords(el) || hasAnyExcludedWords(el)) {
+            el.style.display = 'none';
+            counts[0]++;
+        } else if (!isNaN(minimumSold) && hasSoldLessThan(el)){
+            el.style.display = 'none';
+            counts[1]++;
+        } else {
+            el.style.display = 'block';
         }
-
-        const hiddenCounts = $loadedProducts.reduce(toggleHidden, [0, 0]);
-
-        const excludedMsg = excludedWords.length ? ` -'${excludedWords.join(' ')}'` : '';
-        console.log(
-            $products.length + ' products, ' +
-            $loadedProducts.length + ' loaded, ' +
-            `${hiddenCounts[0]} hidden for '${searchedWords.join(' ')}'${excludedMsg},` +
-            `${hiddenCounts[1]} hidden for less than ${minimumSold} sold`
-        );
+        return counts;
     };
 
-    let filterProducts;
-    const init = () => {
-        filterProducts && filterProducts();
+    let $loadedProducts = $products
+        .map(withSearchableText)
+        .filter(p => p.dataset.searchableText);
+    if (!isNaN(minimumSold)) {
+        $loadedProducts.map(withSoldCount);
+    }
 
-        const $searchBar = $('.shopee-searchbar-input');
-        if (!$searchBar || $searchBar.querySelector('#excludedWords')) return;
+    const hiddenCounts = $loadedProducts.reduce(toggleHidden, [0, 0]);
 
-        console.log('shopee filter enabled');
+    const excludedMsg = excludedWords.length ? ` -'${excludedWords.join(' ')}'` : '';
+    console.log(
+        $products.length + ' products, ' +
+        $loadedProducts.length + ' loaded, ' +
+        `${hiddenCounts[0]} hidden for '${searchedWords.join(' ')}'${excludedMsg},` +
+        `${hiddenCounts[1]} hidden for less than ${minimumSold} sold`
+    );
+};
 
-        const $searchedWordsInput = $('.shopee-searchbar-input__input');
-        const $minimumSoldInput = el('input', { id: 'minimumSold', style: 'width: 70px;', placeholder: isBrazil() ? 'vendido X+' : 'sold X+', onkeyup: function(e) { if (e.key === 'Enter') filterProducts(); } });
-        const $excludedWordsInput = el('input', { id: 'excludedWords', placeholder: isBrazil() ? 'excluir palavras' : 'exclude words', onkeyup: function(e) { if (e.key === 'Enter') filterProducts(); } });
-        filterProducts = filter($searchedWordsInput, $excludedWordsInput, $minimumSoldInput);
+let filterProducts;
+const init = () => {
+    filterProducts && filterProducts();
 
-        const $filterButton = el('button', {
-            type: 'button',
-            onclick: filterProducts,
-            style: `
-                background: no-repeat url(${toBase64(filterIconSvg)});
-                padding: 13px;
-                margin-top: 3px;
-                border: none;
-            `,
-        });
+    const $searchBar = $('.shopee-searchbar-input');
+    if (!$searchBar || $searchBar.querySelector('#excludedWords')) return;
 
-        $searchBar.appendChild($minimumSoldInput);
-        $searchBar.appendChild($excludedWordsInput);
-        $searchBar.appendChild($filterButton);
-    };
+    console.log('shopee filter enabled');
 
-    onMutation(init);
-    // setInterval(init, 2000)
+    const $searchedWordsInput = $('.shopee-searchbar-input__input');
+    const $minimumSoldInput = el('input', { id: 'minimumSold', style: 'width: 70px;', placeholder: isBrazil() ? 'vendido X+' : 'sold X+', onkeyup: function(e) { if (e.key === 'Enter') filterProducts(); } });
+    const $excludedWordsInput = el('input', { id: 'excludedWords', placeholder: isBrazil() ? 'excluir palavras' : 'exclude words', onkeyup: function(e) { if (e.key === 'Enter') filterProducts(); } });
+    filterProducts = filter($searchedWordsInput, $excludedWordsInput, $minimumSoldInput);
+
+    const $filterButton = el('button', {
+        type: 'button',
+        onclick: filterProducts,
+        style: `
+            background: no-repeat url(${toBase64(filterIconSvg)});
+            padding: 13px;
+            margin-top: 3px;
+            border: none;
+        `,
+    });
+
+    $searchBar.appendChild($minimumSoldInput);
+    $searchBar.appendChild($excludedWordsInput);
+    $searchBar.appendChild($filterButton);
+};
+
+onMutation(init);
+// setInterval(init, 2000)
