@@ -1,5 +1,7 @@
 // CONTRIBUTOR NOTE: imports available at github:icetbr/utils
-import { $, $$, el, toBase64, toSearchable, isBrazil } from '@icetbr/utils/web';
+// import { addStyle } from '../../utils/src/web.js';
+// http://localhost:10001/test/manual/Meta%20Is%20Transferring%20Jest%20to%20the%20OpenJS%20Foundation%20Hacker%20News.html
+import { $, $$, el, toBase64, toSearchable, isBrazil, onMutation } from '@icetbr/utils/web';
 import { split } from '@icetbr/utils/misc';
 
 const filterIconSvg = `
@@ -12,7 +14,7 @@ const filterIconSvg = `
     </svg>`;
 
 const filter = ($searchedWordsInput, $excludedWordsInput) => () => {
-    const $products = Array.from($$('.shopee-search-item-result__item'));
+    const $products = $$('.shopee-search-item-result__item');
     const searchedWords = split(toSearchable($searchedWordsInput.value));
     const excludedWords = split(toSearchable($excludedWordsInput.value));
 
@@ -46,7 +48,9 @@ const filter = ($searchedWordsInput, $excludedWordsInput) => () => {
 };
 
 let filterProducts;
-const enable = () => {
+const init = () => {
+    filterProducts && filterProducts();
+
     const $searchBar = $('.shopee-searchbar-input');
     if (!$searchBar || $searchBar.querySelector('#excludedWords')) return;
 
@@ -71,8 +75,4 @@ const enable = () => {
     $searchBar.appendChild($filterButton);
 };
 
-const observer = new MutationObserver(() => {
-    enable();
-    filterProducts && filterProducts();
-});
-observer.observe(document.body, { childList: true, subtree: true });
+onMutation(init);

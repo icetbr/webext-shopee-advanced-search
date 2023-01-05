@@ -1,7 +1,7 @@
 # Shopee Advanced Search
 Filter search results containing ALL specified words, supporting word exclusion.
 
-![Before](media/activated.png)
+![After](media/after.png)
 
 
 ## Install
@@ -29,14 +29,6 @@ When searching for "**cashew nut**", the site returns every kind of nut, and als
 With this extension, only items that have both words "**cashew**" and "**nut**" will be kept, and you can exclude "**cream**" and "**cookies**" as well.
 
 
-## Contributing
-Any kind of collaboration is welcome.
-
-Open issues to report bugs, ask questions, or just talk about the project.
-
-> This is a learning project, its code may contain experimental ideas.
-
-
 ### TODO
 - FP rewrite + eslint
 
@@ -45,3 +37,7 @@ Open issues to report bugs, ask questions, or just talk about the project.
 
 [1]: https://openuserjs.org/users/icetbr/scripts
 [2]: https://addons.mozilla.org/en-US/firefox/user/36373/
+
+
+[Contributing](https://github.com/icetbr/my-projects/blob/main/CONTRIBUTING.md)\
+[License (MIT)](https://choosealicense.com/licenses/mit/)
