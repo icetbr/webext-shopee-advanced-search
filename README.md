@@ -37,8 +37,8 @@ With this extension, only items that have both words "**cashew**" and "**nut**" 
 [^1]: A **mutation observer** ensure that the filtering occurs only at the right moments, and when all items are loaded, the script stops running.
 
 [1]: https://openuserjs.org/scripts/icetbr/Shopee_Advanced_Search
-[2]: https://addons.mozilla.org/en-US/firefox/addon/shopee-advanced-search/
-[3]: https://chrome.google.com/webstore/detail/shopee-advanced-search/lpnljdamllppcklbfnmbbondhklklnni?hl=en
+[2]: https://addons.mozilla.org/en-US/firefox/addon/shopee-advanced-search
+[3]: https://chrome.google.com/webstore/detail/shopee-advanced-search/lpnljdamllppcklbfnmbbondhklklnni
 
 
 [Contributing](https://github.com/icetbr/my-projects/blob/main/CONTRIBUTING.md)\

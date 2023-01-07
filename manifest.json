@@ -19,6 +19,7 @@
         "gecko": {
           "id": "shopee-advanced-search@icetbr"
         },
+        "addonIds": ["shopee-advanced-search", "shopee-advanced-search/lpnljdamllppcklbfnmbbondhklklnni"],
         "keywords": ["userscript", "shopee", "search filter"]
     },
 
