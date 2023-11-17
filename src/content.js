@@ -32,12 +32,12 @@ const filter = ($searchedWordsInput, $excludedWordsInput, $minimumSoldInput) => 
     const hasSoldLessThan = element => element.dataset.soldCount < minimumSold;
 
     const withSearchableText = el => {
-        el.dataset.searchableText = toSearchable($('.Cve6sh', el)?.textContent ?? '');
+        el.dataset.searchableText = toSearchable($('[data-sqe="name"]', el)?.textContent ?? '');
         return el;
     };
 
     const withSoldCount = el => {
-        el.dataset.soldCount = parseNumber($('.r6HknA.uEPGHT', el)?.textContent);
+        el.dataset.soldCount = parseNumber($('[data-sqe="rating"] + div', el)?.textContent);
         return el;
     };
 

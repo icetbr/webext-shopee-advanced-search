@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
     "name": "Shopee Advanced Search",
-    "version": "1.1.2",
+    "version": "1.2.0",
 
     "description": "Filter search results containing ALL specified words, supporting word exclusion and minimum sold.",
     "homepage_url": "https://github.com/icetbr/webext-shopee-advanced-search",
