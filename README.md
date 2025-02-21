@@ -41,5 +41,5 @@ With this extension, only items that have both words "**cashew**" and "**nut**" 
 [3]: https://chrome.google.com/webstore/detail/shopee-advanced-search/lpnljdamllppcklbfnmbbondhklklnni
 
 
-[Contributing](https://github.com/icetbr/my-projects/blob/main/CONTRIBUTING.md)\
+[Contributing](https://github.com/icetbr/my-projects/blob/main/CONTRIBUTING.md)
 [License (MIT)](https://choosealicense.com/licenses/mit/)

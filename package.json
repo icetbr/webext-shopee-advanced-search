@@ -4,15 +4,17 @@
         "sourceDir": "dist"
     },
     "devDependencies": {
-        "@icetbr/rollup-config-webext": "^1.0.0",
-        "@icetbr/eslint-config": "^1.0.0",
-        "@icetbr/run-config": "^1.0.0",
         "@icetbr/cspell-config": "^1.0.0",
+        "@icetbr/eslint-config": "^1.0.0",
+        "@icetbr/rollup-config-webext": "^1.0.0",
+        "@icetbr/run-config": "^1.0.0",
         "@icetbr/utils": "1.0.0",
-        "chrome-webstore-upload-cli": "^2.2.2",
-        "web-ext": "^7.8.0"
+        "web-ext": "^8.4.0",
+        "chrome-webstore-upload-cli": "^3.3.1"
     },
     "cspell": {
-        "import": [ "@icetbr/cspell-config/cspell.json" ]
+        "import": [
+            "@icetbr/cspell-config/cspell.json"
+        ]
     }
 }

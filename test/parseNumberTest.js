@@ -10,7 +10,8 @@ import assert from 'node:assert';
 const isThousands = string => ['k', 'mil'].some(s => string?.includes(s));
 
 const parseNumber = string => {
-    let number = parseFloat(string?.replace(',', '.').match(/[\d\.]+/g));
+    string = string + '';
+    let number = parseFloat((string + '').replace(',', '.').match(/[\d\.]+/g));
     number = isThousands(string) ? number * 1000 : number;
     return isNaN(number) ? 0 : number;
 }
@@ -21,4 +22,5 @@ const parseNumber = string => {
     assert.equal(parseNumber('20 sold'), 20);
     assert.equal(parseNumber(''), 0);
     assert.equal(parseNumber(null), 0);
+    assert.equal(parseNumber(1), 1);
 // })
