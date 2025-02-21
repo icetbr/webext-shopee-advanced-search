@@ -1,5 +1,0 @@
-{
-    "compilerOptions": {
-      "moduleResolution": "NodeNext", // allows code navigation with packages using `exports` in package.json
-    }
-  }

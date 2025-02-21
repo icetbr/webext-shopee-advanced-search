@@ -1,9 +1,9 @@
 {
     "manifest_version": 2,
     "name": "Shopee Advanced Search",
-    "version": "1.0.1",
+    "version": "1.4.0",
 
-    "description": "Filter search results containing ALL specified words, supporting word exclusion",
+    "description": "Filter search results containing ALL specified words, supporting word exclusion and minimum/maximum sold.",
     "homepage_url": "https://github.com/icetbr/webext-shopee-advanced-search",
     "author": "icetbr",
 
@@ -18,7 +18,9 @@
     "browser_specific_settings": {
         "gecko": {
           "id": "shopee-advanced-search@icetbr"
-        }
+        },
+        "addonIds": ["shopee-advanced-search", "shopee-advanced-search/lpnljdamllppcklbfnmbbondhklklnni"],
+        "keywords": ["userscript", "shopee", "search filter"]
     },
 
     "content_scripts": [
