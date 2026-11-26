@@ -1,120 +1,174 @@
-// CONTRIBUTOR NOTE: imports available at github:icetbr/utils
-// import { addStyle } from '../../utils/src/web.js';
-// http://localhost:10001/test/manual/Meta%20Is%20Transferring%20Jest%20to%20the%20OpenJS%20Foundation%20Hacker%20News.html
-import { $, $$, el, toBase64, toSearchable, isBrazil, onMutation } from '@icetbr/utils/web';
-import { split } from '@icetbr/utils/misc';
+// ==UserScript==
+// @name         Shopee Advanced Search
+// @namespace    https://github.com/icetbr/userscripts
+// @version      1.10.0
+// @description  Ordena os produtos da Shopee pela quantidade de vendidos
+// @author       icetbr
+// @match        https://shopee.com.br/*
+// @grant        none
+// ==/UserScript==
 
-const filterIconSvg = `
-    <svg width="26px" height="26px" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg">
-        <g stroke="currentColor">
-            <path d="m4.5 7.5h12"/>
-            <path d="m6.5 10.5h8"/>
-            <path d="m8.5 13.5h4"/>
-        </g>
-    </svg>`;
+const CARD_SELECTOR = 'li[data-sqe="item"]';
+const SOLD_SELECTOR = '.text-shopee-black87.text-xs.min-h-4.flex-shrink';
+const TITLE_TEXT_SELECTOR = '.whitespace-normal.line-clamp-2';
+const SORT_LABEL_SELECTOR = '.shopee-sort-bar__label';
+const productCache = new WeakMap();
 
-const isThousands = string => ['k', 'mil'].some(s => string?.includes(s));
+function parseSold(text) {
+    const value = String(text || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/\p{Diacritic}/gu, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    const match = value.match(/([\d]+(?:[.,]\d+)?)\s*(mil|k)?\s*\+?\s*vendid/i);
 
-const parseNumber = string => {
-    string = string + '';
-    let number = parseFloat(string?.replace(',', '.').match(/[\d\.]+/g));
-    number = isThousands(string) ? number * 1000 : number;
-    return isNaN(number) ? 0 : number;
+    if (!match) return null;
+
+    const number = Number.parseFloat(match[1].replace(',', '.'));
+    if (!Number.isFinite(number)) return null;
+
+    return number * (match[2] ? 1000 : 1);
 }
 
-const filter = ($searchedWordsInput, $excludedWordsInput, $soldAtLeastInput, $soldAtMostInput) => () => {
-    const $products = $$('.shopee-search-item-result__item');
-    const searchedWords = split(toSearchable($searchedWordsInput.value));
-    const excludedWords = split(toSearchable($excludedWordsInput.value));
-    const soldAtLeast = parseNumber($soldAtLeastInput.value);
-    const soldAtMost = parseNumber($soldAtMostInput.value);
+function getSold(card) {
+    if (productCache.has(card)) return productCache.get(card);
 
-    const lacksAllSearchedWords = element => !searchedWords.every(w => element.dataset.searchableText.includes(w));
-    const hasAnyExcludedWords = element => excludedWords.some(w => element.dataset.searchableText.includes(w));
-    const hasSoldAtLeast = element => element.dataset.soldCount >= soldAtLeast;
-    const hasSoldAtMost = element => element.dataset.soldCount <= soldAtMost;
+    const soldElement = card.querySelector(SOLD_SELECTOR);
+    const sold = soldElement ? parseSold(soldElement.textContent) : null;
+    productCache.set(card, sold);
+    return sold;
+}
 
-    const withSearchableText = el => {
-        const contentEl = el?.firstChild?.firstChild?.firstChild?.firstChild?.children[1];
-        const nameEl = contentEl?.children[0]?.children[0];
-        el.dataset.searchableText = toSearchable(nameEl?.textContent ?? '');
-        return el;
-    };
+function addTitleStyle() {
+    if (document.querySelector('#shopee-sold-sort-title-style')) return;
 
-    const withSoldCount = el => {
-        const contentEl = el?.firstChild?.firstChild?.firstChild?.firstChild?.children[1];
-        const ratingEl = contentEl?.children[1]?.children[1]?.children[2];
-        el.dataset.soldCount = parseNumber(ratingEl?.textContent ?? 0);
-        return el;
-    };
-
-    const toggleHidden = (counts, el) => {
-        if (lacksAllSearchedWords(el) || hasAnyExcludedWords(el)) {
-            el.style.display = 'none';
-            counts[0]++;
-        } else if (soldAtLeast && !hasSoldAtLeast(el)){
-            el.style.display = 'none';
-            counts[1]++;
-        } else if (soldAtMost && !hasSoldAtMost(el)){
-            el.style.display = 'none';
-            counts[2]++;
-        } else {
-            el.style.display = 'block';
+    const style = document.createElement('style');
+    style.id = 'shopee-sold-sort-title-style';
+    style.textContent = `
+        ${CARD_SELECTOR} ${TITLE_TEXT_SELECTOR} {
+            display: -webkit-box !important;
+            -webkit-line-clamp: unset !important;
+            -webkit-box-orient: initial !important;
+            overflow: visible !important;
+            max-height: none !important;
         }
-        return counts;
-    };
+    `;
+    (document.head || document.documentElement).appendChild(style);
+}
 
-    let $loadedProducts = $products
-        .map(withSearchableText)
-        .filter(p => p.dataset.searchableText);
-    if (soldAtLeast || soldAtMost) {
-        $loadedProducts = $loadedProducts.map(withSoldCount);
+function wait(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function getCards(container) {
+    return Array.from(container.querySelectorAll(CARD_SELECTOR));
+}
+
+async function loadAllProducts(container, button) {
+    const originalScrollY = window.scrollY;
+    const maxLoadTime = 45000;
+    const startedAt = Date.now();
+    let stableBottomPasses = 0;
+    let lastCount = getCards(container).length;
+
+    button.disabled = true;
+    button.textContent = 'Carregando produtos…';
+    button.style.cursor = 'wait';
+
+    try {
+        // Scroll in small steps so Shopee's lazy-loading triggers each section.
+        while (Date.now() - startedAt < maxLoadTime) {
+            const step = Math.max(300, Math.floor(window.innerHeight * 0.75));
+            const bottom = document.documentElement.scrollHeight - window.innerHeight;
+            const nextY = Math.min(window.scrollY + step, bottom);
+            window.scrollTo(0, nextY);
+            await wait(350);
+
+            const count = getCards(container).length;
+            const atBottom = window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 2;
+
+            if (atBottom) {
+                if (count === lastCount) stableBottomPasses++;
+                else stableBottomPasses = 0;
+                if (stableBottomPasses >= 4) break;
+            } else {
+                stableBottomPasses = 0;
+            }
+
+            lastCount = count;
+        }
+
+        // Let the final lazy-loaded batch finish before sorting.
+        await wait(500);
+        sortCards(container);
+    } finally {
+        window.scrollTo(0, originalScrollY);
+        button.disabled = false;
+        button.textContent = 'Vendidos';
+        button.style.cursor = 'pointer';
     }
-    const hiddenCounts = $loadedProducts.reduce(toggleHidden, [0, 0, 0]);
-    const excludedMsg = excludedWords.length ? ` -'${excludedWords.join(' ')}'` : '';
-    console.log(
-        $products.length + ' products, ' +
-        $loadedProducts.length + ' loaded, ' +
-        `${hiddenCounts[0]} hidden for '${searchedWords.join(' ')}'${excludedMsg}, ` +
-        `${hiddenCounts[1]} hidden for >= ${soldAtLeast} sold, ` +
-        `${hiddenCounts[2]} hidden for <= ${soldAtMost} sold`
-    );
-};
+}
 
-let filterProducts;
-const init = () => {
-    if(filterProducts) filterProducts();
+function sortCards(container) {
+    const cards = getCards(container);
+    if (cards.length < 2) return;
 
-    const $searchBar = $('.shopee-searchbar-input');
-    if (!$searchBar || $searchBar.querySelector('#excludedWords')) return;
+    const sorted = cards.map((card, index) => ({
+        card,
+        index,
+        sold: getSold(card)
+    }));
 
-    console.log('shopee filter enabled');
-
-    const $searchedWordsInput = $('.shopee-searchbar-input__input');
-    const $soldAtLeastInput = el('input', { id: 'soldAtLeast', style: 'width: 70px;', title: isBrazil() ? 'vendido no mínimo' : 'sold at least', placeholder: isBrazil() ? 'vendido >=' : 'sold >=', onkeyup: function(e) { if (e.key === 'Enter') filterProducts(); } });
-    const $soldAtMostInput = el('input', { id: 'soldAtMost', style: 'width: 70px;', title: isBrazil() ? 'vendido no máximo' : 'sold at most', placeholder: isBrazil() ? 'vendido <=' : 'sold <=', onkeyup: function(e) { if (e.key === 'Enter') filterProducts(); } });
-    const $excludedWordsInput = el('input', { id: 'excludedWords', placeholder: isBrazil() ? 'excluir palavras' : 'exclude words', onkeyup: function(e) { if (e.key === 'Enter') filterProducts(); } });
-    filterProducts = filter($searchedWordsInput, $excludedWordsInput, $soldAtLeastInput, $soldAtMostInput);
-
-    const $filterButton = el('button', {
-        type: 'button',
-        style: `
-            background: no-repeat url(${toBase64(filterIconSvg)});
-            padding: 13px;
-            margin-top: 3px;
-            border: none;
-        `,
+    sorted.sort((a, b) => {
+        if (a.sold === null && b.sold === null) return a.index - b.index;
+        if (a.sold === null) return 1;
+        if (b.sold === null) return -1;
+        return b.sold - a.sold || a.index - b.index;
     });
-    $filterButton.addEventListener('click', filterProducts)
 
-    $searchBar.appendChild($soldAtMostInput);
-    $searchBar.appendChild($soldAtLeastInput);
-    $searchBar.appendChild($excludedWordsInput);
-    $searchBar.appendChild($filterButton);
-};
+    if (sorted.every((item, index) => item.card === cards[index])) return;
 
-// shopee makes it hard to know when I can apped UI elements, so calling "init" on mutation is better than calling "filterProducts"
-onMutation(init);
-// setInterval(init, 2000)
+    const fragment = document.createDocumentFragment();
+    for (const item of sorted) fragment.appendChild(item.card);
+    container.appendChild(fragment);
+}
 
-// .shopee_ic .flex-1 flex 1 1 auto
+function addSortButton() {
+    const label = document.querySelector(SORT_LABEL_SELECTOR);
+    if (!label || document.querySelector('#shopee-sort-sold-button')) return false;
+
+    const container = label.parentElement;
+    if (!container) return false;
+
+    const button = document.createElement('button');
+    button.id = 'shopee-sort-sold-button';
+    button.type = 'button';
+    button.textContent = 'Vendidos';
+    button.style.cssText = `
+        margin-left: 10px;
+        padding: 5px 10px;
+        border: 1px solid #ee4d2d;
+        border-radius: 2px;
+        background: #fff;
+        color: #ee4d2d;
+        font: inherit;
+        cursor: pointer;
+    `;
+
+    button.addEventListener('click', () => {
+        const firstCard = document.querySelector(CARD_SELECTOR);
+        const productContainer = firstCard?.parentElement;
+        if (productContainer) loadAllProducts(productContainer, button);
+    });
+
+    container.appendChild(button);
+    return true;
+}
+
+function init() {
+    addTitleStyle();
+    if (!addSortButton()) setTimeout(init, 500);
+}
+
+init();
