@@ -134,41 +134,81 @@ function sortCards(container) {
     container.appendChild(fragment);
 }
 
+let sortBarObserver;
+let observedSortBar;
+let observedSortBarParent;
+
 function addSortButton() {
     const label = document.querySelector(SORT_LABEL_SELECTOR);
-    if (!label || document.querySelector('#shopee-sort-sold-button')) return false;
+    if (!label) return false;
 
-    const container = label.parentElement;
-    if (!container) return false;
+    const sortBar = label.closest('.shopee-sort-bar') || label.parentElement;
+    if (!sortBar) return false;
 
-    const button = document.createElement('button');
-    button.id = 'shopee-sort-sold-button';
-    button.type = 'button';
-    button.textContent = 'Vendidos';
-    button.style.cssText = `
-        margin-left: 10px;
-        padding: 5px 10px;
-        border: 1px solid #ee4d2d;
-        border-radius: 2px;
-        background: #fff;
-        color: #ee4d2d;
-        font: inherit;
-        cursor: pointer;
-    `;
+    let button = sortBar.querySelector('#shopee-sort-sold-button');
+    if (!button) {
+        button = document.createElement('button');
+        button.id = 'shopee-sort-sold-button';
+        button.type = 'button';
+        button.textContent = 'Vendidos';
+        button.style.cssText = `
+            display: inline-block;
+            margin-left: 10px;
+            padding: 5px 10px;
+            border: 1px solid #ee4d2d;
+            border-radius: 2px;
+            background: #fff;
+            color: #ee4d2d;
+            font: inherit;
+            cursor: pointer;
+            vertical-align: middle;
+        `;
 
-    button.addEventListener('click', () => {
-        const firstCard = document.querySelector(CARD_SELECTOR);
-        const productContainer = firstCard?.parentElement;
-        if (productContainer) loadAllProducts(productContainer, button);
+        button.addEventListener('click', () => {
+            const firstCard = document.querySelector(CARD_SELECTOR);
+            const productContainer = firstCard?.parentElement;
+            if (productContainer) loadAllProducts(productContainer, button);
+        });
+    }
+
+    // Insert immediately after the label. Shopee may rebuild this toolbar,
+    // so the observer below calls this again if React removes our button.
+    if (label.nextElementSibling !== button) {
+        label.insertAdjacentElement('afterend', button);
+    }
+
+    watchSortBar(sortBar);
+    return true;
+}
+
+function watchSortBar(sortBar) {
+    const parent = sortBar.parentElement;
+    if (sortBar === observedSortBar && parent === observedSortBarParent) return;
+
+    sortBarObserver?.disconnect();
+    observedSortBar = sortBar;
+    observedSortBarParent = parent;
+
+    sortBarObserver = new MutationObserver(() => {
+        // The label node itself can also be replaced during a Shopee rerender.
+        addSortButton();
     });
 
-    container.appendChild(button);
-    return true;
+    sortBarObserver.observe(sortBar, { childList: true });
+    if (parent) sortBarObserver.observe(parent, { childList: true });
 }
 
 function init() {
     addTitleStyle();
-    if (!addSortButton()) setTimeout(init, 500);
+    addSortButton();
+
+    // Shopee uses client-side navigation, so the page can become a search
+    // route after this script starts. It can also replace the toolbar's
+    // ancestors, which disconnects the local MutationObserver. Recheck
+    // only the search toolbar at a low rate to cover both cases.
+    setInterval(() => {
+        if (location.pathname.includes('/search')) addSortButton();
+    }, 1000);
 }
 
 init();
